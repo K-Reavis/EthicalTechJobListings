@@ -1,0 +1,46 @@
+---
+title: "ECTJ Skills"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(superml)
+library(tree)
+```
+
+```{r}
+df <- read.csv("ectj_emsi.csv") 
+```
+
+```{r}
+df$Platform <-as.factor(df$Platform)
+```
+
+
+```{r}
+set.seed(101)
+train=sample(1:nrow(df), 166)
+tree.posting = tree(Platform ~ ., data = df, subset = train)
+```
+
+```{r}
+#plot(tree.posting)
+#text(tree.posting)
+summary(tree.posting)
+```
+
+
+```{r}
+tjfg_df <- as.data.frame(head(rev(sort(colSums(df %>% filter(Platform == "TJFG") %>% select(-Platform)))), 10)) 
+colnames(tjfg_df) <- c("Count")
+tjfg_df <- cbind(Term = rownames(tjfg_df), tjfg_df)
+ggplot(data = tjfg_df, aes(x = reorder(Term, -Count), y = Count, col = Term)) + geom_bar(stat="identity", color='skyblue',fill='steelblue') + theme(axis.text.x=element_text(angle=65, hjust=1)) + xlab("Term") + ggtitle("Most Frequent Skills in TJFG Jobs")
+```
+```{r}
+in_df <- as.data.frame(head(rev(sort(colSums(df %>% filter(Platform == "Indeed") %>% select(-Platform)))), 10))
+colnames(in_df) <- c("Count")
+in_df <- cbind(Term = rownames(in_df), in_df)
+ggplot(data = in_df, aes(x = reorder(Term, -Count), y = Count, col = Term)) + geom_bar(stat="identity", color='skyblue',fill='steelblue') + theme(axis.text.x=element_text(angle=65, hjust=1)) + xlab("Term") + ggtitle("Most Frequent Skills in Indeed Jobs")
+```

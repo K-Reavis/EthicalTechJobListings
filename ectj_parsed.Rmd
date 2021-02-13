@@ -1,0 +1,138 @@
+---
+title: "ECTJ Parsed"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(superml)
+library(tree)
+library(MASS)
+```
+
+```{r}
+df <- read.csv("ectj_parsed.csv") 
+```
+
+```{r}
+nrow(df %>% filter(Platform == "TJFG"))
+nrow(df %>% filter(Platform == "Indeed"))
+```
+
+```{r}
+df$Platform <-as.factor(df$Platform)
+```
+
+```{r}
+pca <- prcomp(df %>% dplyr::select(-c("Platform")))
+pc <- as.data.frame(pca$x)
+```
+
+```{r}
+ggplot(pc, aes(x = PC1, y = PC2, color = as.factor(df$Platform))) + geom_point()
+```
+
+```{r}
+cl <- kmeans(df %>% dplyr::select(-c("Platform")), 4, algorithm = "Lloyd")
+ggplot(pc, aes(x = PC1, y = PC2, color = as.factor(cl$cluster))) + geom_point()
+```
+
+```{r}
+full <- read.csv("ectj_postings.csv")
+```
+
+
+```{r}
+ggplot(full, aes(x = as.factor(cl$cluster), fill = Platform)) + geom_bar()
+```
+
+```{r}
+ggplot(full, aes(x = as.factor(cl$cluster), fill = Search_Term)) + geom_bar()
+```
+
+```{r}
+ggplot(full, aes(fill = Search_Term, x = Platform)) + 
+    geom_bar()
+```
+
+
+```{r}
+set.seed(101)
+train=sample(1:nrow(df), 166)
+tree.posting = tree(cl$cluster ~ .-Platform, data = df)
+```
+
+```{r}
+plot(tree.posting)
+text(tree.posting, pretty=1)
+```
+
+```{r}
+summary(tree.posting)
+```
+
+
+```{r}
+set.seed(101)
+train=sample(1:nrow(df), 166)
+tree.posting = tree(Platform ~ ., data = df)
+```
+
+```{r}
+plot(tree.posting)
+text(tree.posting, pretty=1)
+```
+
+```{r}
+summary(tree.posting)
+```
+
+Variables actually used in tree construction:
+ [1] "team"          "tools"         "web"           "help"         
+ [5] "ability"       "communication" "gender"        "code"         
+ [9] "use"           "across"        "manufacturing" "impact"       
+[13] "systems"       "skills"        "management"   
+
+```{r}
+log_df <- df
+log_df$Platform <- ifelse(df$Platform == "TJFG", 1, 0)
+```
+
+equal + social + helping
+
+```{r}
+mylogit <- glm(Platform ~ team + tools + web + ability + communication + gender + code + use + across + manufacturing + impact, data = log_df, family = "binomial")
+```
+
+```{r}
+summary(mylogit)
+```
+
+```{r}
+(exp(coef(mylogit)) - 1) 
+```
+
+
+```{r}
+car::vif(mylogit)
+```
+
+
+```{r}
+summary( glm(formula = Platform ~ team + tools + web + ability + communication + 
+    gender + code + use + across + manufacturing + impact, family = "binomial", 
+    data = log_df))
+```
+
+
+Key words from database: social / justice / ethics / sustainability / diversity / equality / equity / inclusion / safety 
+
+```{r}
+mylogit <- glm(Platform ~ social + justice + diversity + equal + equity + inclusion + safety , data = log_df, family = "binomial")
+```
+
+```{r}
+summary(mylogit)
+```
+

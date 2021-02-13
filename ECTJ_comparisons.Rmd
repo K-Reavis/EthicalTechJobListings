@@ -1,0 +1,107 @@
+---
+title: "ECTJ Comparisons"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(superml)
+library(tree)
+library(MASS)
+```
+
+```{r}
+df <- read.csv("ectj_postings.csv")
+```
+
+```{r}
+cfv <- TfIdfVectorizer$new(max_features = 500, remove_stopwords = T)
+
+cf_mat <- cfv$fit_transform(df$Text)
+
+#cf_mat[cf_mat > 0] = 1
+```
+
+```{r}
+tj <- df %>% filter(Platform == "TJFG")
+
+tj_cfv <- TfIdfVectorizer$new(max_features = 500, remove_stopwords = T)
+
+tj_mat <- cfv$fit_transform(tj$Text)
+```
+
+```{r}
+sort(colnames(tj_mat))
+```
+
+Visualize clusters w/ PCA
+
+```{r}
+pca <- prcomp(cf_mat)
+pc <- as.data.frame(pca$x)
+```
+
+```{r}
+ggplot(pc, aes(x = PC1, y = PC2, color = as.factor(df$Platform))) + geom_point()
+```
+
+
+When forming a tree, we can use 
+
+
+```{r}
+set.seed(101)
+train=sample(1:nrow(df), 166)
+#full = data.frame(cf_mat, as.factor(df$Platform)) %>% rename(Platform = as.factor.df.Platform.) %>% dplyr::select(-c(u2019s, s))
+tree.posting = tree(Platform ~ ., subset = train, data = df)
+```
+
+```{r}
+plot(tree.posting)
+text(tree.posting, pretty=1)
+```
+
+```{r}
+summary(tree.posting)
+```
+
+```{r}
+log_df <- full
+log_df$Platform <- ifelse(full$Platform == "TJFG", 1, 0)
+```
+
+```{r}
+mylogit <- glm(Platform ~ equal + social + helping, data = log_df, family = "binomial")
+```
+
+```{r}
+summary(mylogit)
+```
+
+```{r}
+(exp(coef(mylogit)) - 1) * 100 * .0000001
+```
+
+```{r}
+with(mylogit, pchisq(null.deviance - deviance, df.null - df.residual, lower.tail = FALSE))
+```
+
+```{r}
+logLik(mylogit)
+```
+
+```{r}
+nrow(df)
+```
+
+diversity, equity, social, justice, equal, helping, human, inclusive
+
+```{r}
+sort(colnames(cf_mat))
+```
+
+```{r}
+178 + 98
+```
+
